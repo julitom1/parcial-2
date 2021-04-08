@@ -29,18 +29,18 @@ function cargar(){
 
 	  
 	}
-	//function marcas(){
-	//	fetch('https://raw.githubusercontent.com/jayshields/google-maps-api-template/master/markers.json')
-	//	.then(function(response){return response.json()})
-	//	.then(plotMarkers);
-	//}
+	function marcas(){
+		fetch('https://raw.githubusercontent.com/jayshields/google-maps-api-template/master/markers.json')
+		.then(function(response){return response.json()})
+		.then(plotMarkers);
+	}
 	var markers;
 	var bounds;
 
 	function plotMarkers(m)
 	{
 	  bounds = new google.maps.LatLngBounds();
-		var position = new google.maps.LatLng(0, 40);
+		var position = new google.maps.LatLng(m.lat, m.lon);
 	
 		
 		 // new google.maps.Marker({
@@ -58,10 +58,10 @@ function cargar(){
 	}
 
 function colocarDatos(datos){
-	$("#ciudad").html(datos);
-	$("#temperatura").html("datos");
-	$("#latitud").html("datos");
-	$("#longitud").html("datos");
+	$("#ciudad").html(datos.ciudad);
+	$("#temperatura").html(datos.temp+" grados");
+	$("#latitud").html(datos.lat);
+	$("#longitud").html(datos.lon);
 }
 
 $(document).ready(function(){
@@ -69,11 +69,40 @@ $(document).ready(function(){
 
 	$("#buscar").click(function(){
 			var c=$("#nickname").val();
-			api.getDatos(c,function(datos){
-				colocarDatos(datos);
+			api.getDatos(c,function(err,datos){
+					if(err){
+						fetch("https://api.openweathermap.org/data/2.5/weather?q="+ c +"&appid=8805fcd7d0439565c8dda8eb5eedbbad")
+						.then(function(response){return response.json()})
+						.then(async function(d){
+							let s = {
+								ciudad:d.name,
+								lat: d.coord.lat,
+								lon:d.coord.lon,
+								temp:d.main.temp,
+							}
+							let json=JSON.stringify(s);
+							await api.postDatos(json);
+							await api.getDatos(c,function(error,datos){
+								if(error){
+									console.log(err);
+								}else{
+									colocarDatos(datos);
+									plotMarkers(datos);
+								}
+							});
+						})
+						
+					}
+					else{	
+						colocarDatos(datos);
+						plotMarkers(datos);
+					}
 				
 			});
-	});
 			
+			
+			
+	});
+	
 	
 });
